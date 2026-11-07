@@ -1,30 +1,30 @@
 <template>
     <div class="min-h-screen bg-gray-50 text-gray-900">
         <!-- HEADER -->
-        <header class="sticky top-0 z-30 border-b border-gray-200 bg-white">
+        <header class="sticky top-0 z-30 bg-[#c697e3] shadow-sm">
             <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-                <button type="button" class="text-xl font-bold tracking-tight" @click="backToProducts">
-                    Shop<span class="text-blue-600">Store</span>
+                <button type="button" class="shrink-0" @click="backToProducts">
+                    <img src="/images/logo.png" alt="3Dream Creations" width="1625" height="338" class="h-9 w-auto sm:h-11" />
                 </button>
 
                 <button
                     type="button"
-                    class="relative rounded-lg border border-gray-200 px-4 py-2 font-medium hover:bg-gray-50"
+                    class="relative rounded-lg border border-white/70 bg-white px-4 py-2 font-medium text-gray-900 hover:bg-gray-50"
                     @click="cartOpen = true"
                 >
                     Cart
 
-                    <!-- <span
+                    <span
                         v-if="cartCount > 0"
                         class="ml-2 inline-flex min-w-6 items-center justify-center rounded-full bg-blue-600 px-1.5 py-0.5 text-xs text-white"
                     >
                         {{ cartCount }}
-                    </span> -->
+                    </span>
                 </button>
             </div>
         </header>
 
-        <main class="mx-aut max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 class="text-2xl font-bold">Our Products</h2>
@@ -82,7 +82,7 @@
                     <!-- Product cards -->
                     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                         <article
-                            v-for="product in products"
+                            v-for="product in items"
                             :key="product.id"
                             class="group overflow-hidden rounded-xl border border-gray-200 bg-white transition hover:-translate-y-1 hover:shadow-lg"
                         >
@@ -110,7 +110,7 @@
                                 </button>
                                 <div class="mb-4 flex items-center justify-between gap-2">
                                     <span class="text-lg font-bold">
-                                        {{ formatPrice(product.price) }}
+                                        {{ displayPrice(product) }}
                                     </span>
                                 </div>
                             </div>
@@ -128,19 +128,36 @@
                     class="mt-4 font-medium text-blue-600 hover:underline"
                     @click="
                         search = '';
-                        category = 'All Categories';
+                        category = 0;
                     "
                 >
                     Clear filters
                 </button>
             </div>
-            <ProductModal :product="selectedProduct" @close="closeProductModal" />
+            <ProductModal :product="selectedProduct" @close="closeProductModal" @added="onItemAdded" />
         </main>
+
+        <CartPanel :open="cartOpen" @close="cartOpen = false" />
+
+        <!-- Item Added toast -->
+        <Transition enter-from-class="translate-y-4 opacity-0" enter-active-class="transition duration-200" leave-to-class="translate-y-4 opacity-0" leave-active-class="transition duration-200">
+            <div v-if="toastMessage" role="status" aria-live="polite" class="fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2 rounded-lg bg-gray-900 px-5 py-3 text-sm font-medium text-white shadow-lg">
+                <svg class="h-5 w-5 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 13l4 4L19 7" />
+                </svg>
+                {{ toastMessage }}
+            </div>
+        </Transition>
     </div>
 </template>
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import ProductModal from "../components/ProductModal.vue";
+import CartPanel from "../components/CartPanel.vue";
+import { useCart } from "../stores/cart";
+
+const { count: cartCount } = useCart();
+const cartOpen = ref(false);
 
 const search = ref("");
 const category = ref(0);
@@ -179,8 +196,7 @@ onMounted(async () => {
 const filteredProducts = computed(() => {
     const term = search.value.trim().toLowerCase();
     return products.value.filter((product) => {
-        const matchesSearch = (product.name ?? "").toLowerCase().includes(term);
-        console.log(products);
+        const matchesSearch = term === "" || (product.name ?? "").toLowerCase().includes(term);
         const matchesCategory = category.value === 0 || Number(product.category_id) === Number(category.value);
         return matchesSearch && matchesCategory;
     });
@@ -207,10 +223,35 @@ function closeProductModal() {
     selectedProduct.value = null;
 }
 
+// ITEM ADDED TOAST
+const toastMessage = ref("");
+let toastTimer = null;
+
+function onItemAdded() {
+    closeProductModal();
+    toastMessage.value = "Item Added";
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => (toastMessage.value = ""), 2500);
+}
+
 function formatPrice(price) {
     return new Intl.NumberFormat("en-PH", {
         style: "currency",
         currency: "PHP",
-    }).format(price);
+    }).format(Number(price) || 0);
+}
+
+// Variant price range (e.g. "₱1,500.00 – ₱1,800.00"), or the product's own price if it has no variants
+function displayPrice(product) {
+    const prices = (product.variants ?? []).map((variant) => Number(variant.price) || 0);
+
+    if (!prices.length) {
+        return formatPrice(product.price);
+    }
+
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+
+    return min === max ? formatPrice(min) : `${formatPrice(min)} – ${formatPrice(max)}`;
 }
 </script>

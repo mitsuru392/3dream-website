@@ -11,6 +11,7 @@ class ProductController extends Controller
     public function index(): JsonResponse
     {
         $products = Product::query()
+            ->with(['variants' => fn ($query) => $query->where('is_active', true)->orderBy('id')])
             ->orderBy('name')
             ->get();
 
