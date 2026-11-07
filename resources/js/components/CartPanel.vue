@@ -118,7 +118,7 @@ onUnmounted(() => {
                     <span class="text-lg font-bold text-gray-900">{{ formatPrice(total) }}</span>
                 </div>
 
-                <button type="button" disabled class="w-full cursor-not-allowed rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white opacity-70">Checkout</button>
+                <a href="/checkout" class="block w-full rounded-lg bg-blue-600 px-6 py-3 text-center font-semibold text-white transition hover:bg-blue-700">Checkout</a>
 
                 <button type="button" class="mt-3 w-full text-sm font-medium text-gray-500 hover:text-gray-700 hover:underline" @click="clear">Clear cart</button>
             </div>

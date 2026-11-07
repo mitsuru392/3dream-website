@@ -14,3 +14,6 @@ Route::view('/order-form', 'welcome', ['page' => 'OrderForm']);
 Route::view('/products', 'welcome', ['page' => 'Products']);
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/product-list', [ProductController::class, 'index']);
+
+// CHECKOUT ROUTE
+Route::view('/checkout', 'welcome', ['page' => 'Checkout']);
